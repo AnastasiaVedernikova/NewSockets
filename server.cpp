@@ -7,11 +7,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <netdb.h>
+#include "main.cpp"
 using namespace std;
 
 int main() {
-    // std::cout << "Hello, World!" << std::endl;
+
     struct sockaddr_in server;
+    socklen_t addr_size;
     char buf[1024];
     int sd = socket(AF_INET, SOCK_STREAM, 0);
     if (sd == -1) {
@@ -21,33 +23,67 @@ int main() {
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
     server.sin_port = htons(2233);
-    int res = bind( sd,(struct sockaddr*) &server, sizeof(server) );
+    int res = bind(sd, (struct sockaddr *) &server, sizeof(server));
     if (res == -1) {
         cout << "Error binding a socket to an address: " << strerror(errno) << endl;
     }
 
-    if (listen(sd, 1)<0){
-        cout<<"error listening"<<endl;
-        exit(1);
-    };
-    cout << "Server: waiting for connections..." << endl;
+    listen(sd, 1);
 
-    int psd = accept(sd, 0, 0);
-    //new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addr_size); //new socket on which connection will be established
-    if (psd == -1)
-    {
-        cout << "Connection failed" << endl;
+    cout << "Server: waiting for connections..." << endl;
+    while(1) {
+        addr_size = sizeof(server);
+        int psd = accept(sd, 0, 0);
+
+        //int psd = accept(sd, (struct sockaddr *) &server, &addr_size);
+
+        if (psd == -1) {
+            //cout << "Connection failed" << endl;
+        }
+        //cout << "Connection established on port " << endl;
+        char buffer[1];
+        close(sd);
+
+        if (!fork()) {
+            int num = recv(psd, buffer, 1, 0);
+
+
+            buffer[num] = '\0';
+            //std::string my (buffer);
+           // cout << "recevied: "<< buffer << endl;//-------------------------------------------------------------------
+            switch (buffer[0]) {
+                case 'd': {
+
+                    if (send(psd, getDate().c_str(), 10, 0) == -1) {
+                        cout << "Error" << endl;
+                    }
+                    break;
+                }
+                case 't': {
+                    if (send(psd, getTime().c_str(), 8, 0) == -1) {
+                        cout << "Error" << endl;
+                    }
+                    break;
+                }
+                case 'h': {
+                    if (send(psd, "Hello, I an server!", 30, 0) == -1) {
+                        cout << "Error" << endl;
+                    }
+                    break;
+                }
+                default:
+                    if (send(psd, "Try again!", 33, 0) == -1) {
+                        cout << "Error" << endl;
+                    }
+            }
+            close(psd);
+            exit(0);
+        }
+        close(psd);
+
     }
-    cout << "Connection established on port " << endl;
-    close(sd);
-    for (;;) {
-        int cc = recv(psd, buf, sizeof(buf, 0), 0);
-        if (cc == 0) exit(EXIT_SUCCESS);
-        buf[cc] = '\0';
-        printf("message received: %s\n", buf);
-    }
+
+
     return 0;
-}//
-// Created by anastasia on 05.06.17.
-//
+}
 
