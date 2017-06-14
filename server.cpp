@@ -10,6 +10,8 @@
 #include "main.cpp"
 using namespace std;
 
+
+
 int main() {
 
     struct sockaddr_in server;
@@ -22,64 +24,62 @@ int main() {
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_port = htons(2233);
+    server.sin_port = htons(2233);//39
     int res = bind(sd, (struct sockaddr *) &server, sizeof(server));
     if (res == -1) {
         cout << "Error binding a socket to an address: " << strerror(errno) << endl;
     }
 
-    listen(sd, 1);
+    listen(sd, 10);
 
     cout << "Server: waiting for connections..." << endl;
     while(1) {
+        bzero(buf, 1024);
+        buf[0] = 'E';
         addr_size = sizeof(server);
         int psd = accept(sd, 0, 0);
 
-        //int psd = accept(sd, (struct sockaddr *) &server, &addr_size);
-
         if (psd == -1) {
-            //cout << "Connection failed" << endl;
+            cout << "Connection failed" << endl;
         }
-        //cout << "Connection established on port " << endl;
-        char buffer[1];
-        close(sd);
+        cout << "Connection established " << endl;
 
-        if (!fork()) {
-            int num = recv(psd, buffer, 1, 0);
+        long e = read(psd, buf, 100);
+        if (buf[0] != 'E')printf("accepted:  %s\n", buf);
+        buf[e] = '0';
+        buf[e+1] = 0;
+
+        char buffer[100];
+        bzero(buffer, 100);
+
+        if (buf[0] == '-' && buf[1] == 'h' && buf[2] == '0') {
+            strncpy(buffer, "Hello ;)", 100);
+        }else if (buf[0] == '-' && buf[1] == 'd' && buf[2] == '0'){
+            strncpy(buffer, getDate().c_str(), 100);
 
 
-            buffer[num] = '\0';
-            //std::string my (buffer);
-           // cout << "recevied: "<< buffer << endl;//-------------------------------------------------------------------
-            switch (buffer[0]) {
-                case 'd': {
+        }else if (buf[0] == '-' && buf[1] == 't' && buf[2] == '0') {
+            strncpy(buffer, getTime().c_str(), 100);
+        }else if (buf[0] == '-' && buf[1] == 'm'){
 
-                    if (send(psd, getDate().c_str(), 10, 0) == -1) {
-                        cout << "Error" << endl;
-                    }
-                    break;
-                }
-                case 't': {
-                    if (send(psd, getTime().c_str(), 8, 0) == -1) {
-                        cout << "Error" << endl;
-                    }
-                    break;
-                }
-                case 'h': {
-                    if (send(psd, "Hello, I an server!", 30, 0) == -1) {
-                        cout << "Error" << endl;
-                    }
-                    break;
-                }
-                default:
-                    if (send(psd, "Try again!", 33, 0) == -1) {
-                        cout << "Error" << endl;
-                    }
+            string s(buf+2, buf+4);
+            int size_s = atoi(s.c_str());
+            if(size_s != 0){
+                string resp(buf+4);
+                strncpy(buffer, resp.c_str(), size_s+1);}
+            else{
+                strncpy(buffer, "You forget to enter size", 25);
             }
-            close(psd);
-            exit(0);
+
+
         }
-        close(psd);
+        else{
+            strncpy(buffer, "sorry, please try again", 100);
+        }
+
+
+        write(psd, buffer, strlen(buffer) + 1);
+
 
     }
 

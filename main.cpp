@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <sys/socket.h>
 
 
 using namespace std;
@@ -19,3 +20,5 @@ string getTime() {
     string dates = std::to_string(now->tm_hour) + '-'+ std::to_string(now->tm_min) + '-' + std::to_string(now->tm_sec);
     return dates;
 }
+
+
